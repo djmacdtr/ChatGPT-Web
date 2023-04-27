@@ -50,7 +50,7 @@ project_info = "## ChatGPT 网页版    \n" \
 #                       "- 输入`帮助`以获取帮助提示"
 
 project_info_prompt = "#### 当前浏览器会话为首次请求\n" \
-                      "#### 请输入已有用户`id`。\n"
+                      "#### 请输入已有用户`id`。"
 
 def get_response_from_ChatGPT_API(message_context, apikey):
     """
