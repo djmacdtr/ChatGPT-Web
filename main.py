@@ -17,12 +17,13 @@ app.config['SECRET_KEY'] = os.urandom(24)
 with open("config.yaml", "r", encoding="utf-8") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
     if 'HTTPS_PROXY' in config:
-        if os.environ.get('HTTPS_PROXY') is None:   # 优先使用环境变量中的代理，若环境变量中没有代理，则使用配置文件中的代理
+        if os.environ.get('HTTPS_PROXY') is None:  # 优先使用环境变量中的代理，若环境变量中没有代理，则使用配置文件中的代理
             os.environ['HTTPS_PROXY'] = config['HTTPS_PROXY']
     PORT = config['PORT']
     API_KEY = config['OPENAI_API_KEY']
-    CHAT_CONTEXT_NUMBER_MAX = config['CHAT_CONTEXT_NUMBER_MAX']     # 连续对话模式下的上下文最大数量 n，即开启连续对话模式后，将上传本条消息以及之前你和GPT对话的n-1条消息
-    USER_SAVE_MAX = config['USER_SAVE_MAX']     # 设置最多存储n个用户，当用户过多时可适当调大
+    CHAT_CONTEXT_NUMBER_MAX = config[
+        'CHAT_CONTEXT_NUMBER_MAX']  # 连续对话模式下的上下文最大数量 n，即开启连续对话模式后，将上传本条消息以及之前你和GPT对话的n-1条消息
+    USER_SAVE_MAX = config['USER_SAVE_MAX']  # 设置最多存储n个用户，当用户过多时可适当调大
 
 if os.getenv("DEPLOY_ON_RAILWAY") is not None:  # 如果是在Railway上部署，需要删除代理
     os.environ.pop('HTTPS_PROXY', None)
@@ -34,11 +35,22 @@ STREAM_FLAG = True  # 是否开启流式推送
 USER_DICT_FILE = "all_user_dict_v2.pkl"  # 用户信息存储文件（包含版本）
 lock = threading.Lock()  # 用于线程锁
 
-project_info = "## ChatGPT 网页版    \n" \
-               " Code From  " \
-               "[ChatGPT-Web](https://github.com/LiangYang666/ChatGPT-Web)  \n" \
-               "发送`帮助`可获取帮助  \n"
+# project_info = "## ChatGPT 网页版    \n" \
+#                " Code From  " \
+#                "[ChatGPT-Web](https://github.com/LiangYang666/ChatGPT-Web)  \n" \
+#                "发送`帮助`可获取帮助  \n"
 
+project_info = "## ChatGPT 网页版    \n" \
+               " Code From zy "
+
+# project_info_prompt = "#### 当前浏览器会话为首次请求\n" \
+#                       "#### 请输入已有用户`id`或创建新的用户`id`。\n" \
+#                       "- 已有用户`id`请在输入框中直接输入\n" \
+#                       "- 创建新的用户`id`请在输入框中输入`new:xxx`,其中`xxx`为你的自定义id，请牢记\n" \
+#                       "- 输入`帮助`以获取帮助提示"
+
+project_info_prompt = "#### 当前浏览器会话为首次请求\n" \
+                      "#### 请输入已有用户`id`。\n"
 
 def get_response_from_ChatGPT_API(message_context, apikey):
     """
@@ -110,7 +122,7 @@ def get_message_context(message_history, have_chat_context, chat_with_history):
         message_context.append(message_history[-1])
         total += len(message_history[-1]['content'])
 
-    print(f"len(message_context): {len(message_context)} total: {total}",)
+    print(f"len(message_context): {len(message_context)} total: {total}", )
     return message_context
 
 
@@ -270,11 +282,7 @@ def load_messages():
     check_session(session)
     if session.get('user_id') is None:
         messages_history = [{"role": "assistant", "content": project_info},
-                            {"role": "assistant", "content": "#### 当前浏览器会话为首次请求\n"
-                                                             "#### 请输入已有用户`id`或创建新的用户`id`。\n"
-                                                             "- 已有用户`id`请在输入框中直接输入\n"
-                                                             "- 创建新的用户`id`请在输入框中输入`new:xxx`,其中`xxx`为你的自定义id，请牢记\n"
-                                                             "- 输入`帮助`以获取帮助提示"}]
+                            {"role": "assistant", "content": project_info_prompt}]
     else:
         user_info = get_user_info(session.get('user_id'))
         chat_id = user_info['selected_chat_id']
@@ -346,7 +354,7 @@ def get_balance(apikey):
         data = subscription_response.json()
         total = data.get("hard_limit_usd")
     else:
-        return head+subscription_response.text
+        return head + subscription_response.text
 
     # start_date设置为今天日期前99天
     start_date = (datetime.datetime.now() - datetime.timedelta(days=99)).strftime("%Y-%m-%d")
@@ -361,7 +369,7 @@ def get_balance(apikey):
         days = min(5, len(daily_costs))
         recent = f"##### 最近{days}天使用情况  \n"
         for i in range(days):
-            cur = daily_costs[-i-1]
+            cur = daily_costs[-i - 1]
             date = datetime.datetime.fromtimestamp(cur.get("timestamp")).strftime("%Y-%m-%d")
             line_items = cur.get("line_items")
             cost = 0
@@ -369,12 +377,12 @@ def get_balance(apikey):
                 cost += item.get("cost")
             recent += f"\t{date}\t{cost / 100} \n"
     else:
-        return head+billing_response.text
+        return head + billing_response.text
 
-    return head+f"\n#### 总额:\t{total:.4f}  \n" \
-                f"#### 已用:\t{total_usage:.4f}  \n" \
-                f"#### 剩余:\t{total-total_usage:.4f}  \n" \
-                f"\n"+recent
+    return head + f"\n#### 总额:\t{total:.4f}  \n" \
+                  f"#### 已用:\t{total_usage:.4f}  \n" \
+                  f"#### 剩余:\t{total - total_usage:.4f}  \n" \
+                  f"\n" + recent
 
 
 @app.route('/returnMessage', methods=['GET', 'POST'])
